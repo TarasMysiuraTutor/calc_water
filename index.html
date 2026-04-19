@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Теплофізичні властивості води · H₂O Calc</title>
+  <title>Теплофізичні властивості рідин · Food Thermo Calc</title>
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,10 +14,10 @@
   <header class="site-header">
     <div class="header-inner">
       <a href="#" class="logo">
-        <span class="logo-formula">H₂O</span>
+        <span class="logo-formula">Food</span>
         <span class="logo-sub">Thermo Calc</span>
       </a>
-      <span class="header-badge">IAPWS-IF97 · 101.325 кПа</span>
+      <span class="header-badge">Харчова промисловість · 101.325 кПа</span>
     </div>
   </header>
 
@@ -25,10 +25,10 @@
   <div class="hero">
     <div class="container">
       <div class="hero-eyebrow">Термодинамічний калькулятор</div>
-      <h1>Теплофізичні<br><em>властивості води</em></h1>
+      <h1>Теплофізичні<br><em>властивості рідин</em></h1>
       <p class="hero-desc">
-        Введіть температуру — отримайте густину, теплоємність,
-        теплопровідність, в'язкість та інші властивості рідкої води.
+        Вода, молоко, олії, цукрові розчини, соки та спиртові розчини —
+        отримайте густину, теплоємність, теплопровідність, в'язкість та інші властивості.
       </p>
     </div>
   </div>
@@ -41,7 +41,25 @@
       <div class="card input-card">
         <div class="input-card-title">Параметри розрахунку</div>
 
-        <div class="input-row">
+        <!-- Substance group selector -->
+        <div class="section-label">Група речовин</div>
+        <div class="group-tabs" id="groupTabs">
+          <!-- filled by app.js -->
+        </div>
+
+        <!-- Substance selector -->
+        <div class="section-label" id="substanceLabelRow" style="margin-top:18px">Речовина</div>
+        <div class="substance-select-wrap">
+          <select id="substanceSelect" class="substance-select">
+            <!-- filled by app.js -->
+          </select>
+          <span class="select-arrow">▾</span>
+        </div>
+
+        <!-- Range note for current substance -->
+        <div class="substance-range-note" id="substanceRangeNote"></div>
+
+        <div class="input-row" style="margin-top:18px">
           <!-- Temperature input -->
           <div>
             <label class="field-label" for="tempInput">Температура</label>
@@ -75,10 +93,6 @@
           </div>
         </div>
 
-        <p class="range-note">
-          Допустимий діапазон: <b>0 — 370 °C</b> &ensp;·&ensp;
-          атмосферний тиск &ensp;·&ensp; рідка фаза
-        </p>
         <div class="error-banner" id="errorBanner"></div>
       </div>
 
@@ -86,7 +100,7 @@
       <section class="results-section" id="resultsSection">
         <div class="results-meta">
           <div class="results-temp" id="tempDisplay">—</div>
-          <div class="phase-tag phase-water" id="phaseTag">Рідка вода</div>
+          <div class="phase-tag phase-water" id="phaseTag">—</div>
         </div>
 
         <div class="props-grid" id="propsGrid">
@@ -101,17 +115,16 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <p class="footer-note">
-        Розраховано за апроксимаційними формулами стандарту
-        <a href="https://www.iapws.org" target="_blank" rel="noopener">IAPWS-IF97</a>.
-        Похибка &lt; 1% у робочому діапазоні.
+        Вода: <a href="https://www.iapws.org" target="_blank" rel="noopener">IAPWS-IF97</a> ·
+        Інші рідини: Choi &amp; Okos (1986), Noureddini et al. (1992), Perry's Handbook ·
+        Похибка &lt; 2% у робочому діапазоні
       </p>
-      <p class="footer-note">H₂O Thermo Calc &copy; 2025</p>
+      <p class="footer-note">Food Thermo Calc &copy; 2025</p>
     </div>
   </footer>
 
 </div>
 
-<!-- Scripts — порядок важливий: спочатку логіка, потім UI -->
 <script src="water.js"></script>
 <script src="app.js"></script>
 </body>

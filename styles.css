@@ -739,3 +739,147 @@ main.main-content {
     grid-template-columns: 1fr;
   }
 }
+
+/* ─────────────────────────────────────────
+   SECTION LABEL
+───────────────────────────────────────── */
+.section-label {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+/* ─────────────────────────────────────────
+   GROUP TABS
+───────────────────────────────────────── */
+.group-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.group-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  font-family: var(--ff-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, color 150ms, transform 120ms;
+  white-space: nowrap;
+}
+
+.group-tab:hover {
+  background: var(--blue-bg);
+  border-color: var(--blue-border);
+  color: var(--blue);
+  transform: translateY(-1px);
+}
+
+.group-tab.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tab-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.tab-label {
+  line-height: 1;
+}
+
+/* ─────────────────────────────────────────
+   SUBSTANCE SELECT
+───────────────────────────────────────── */
+.substance-select-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.substance-select {
+  width: 100%;
+  height: 48px;
+  padding: 0 44px 0 16px;
+  font-family: var(--ff-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-1);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.substance-select:hover  { border-color: var(--border-lt); }
+.substance-select:focus  { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(74,144,255,0.18); }
+
+.select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────
+   SUBSTANCE RANGE NOTE
+───────────────────────────────────────── */
+.substance-range-note {
+  display: none;
+  margin-top: 8px;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ─────────────────────────────────────────
+   PHASE TAG — SUBSTANCE (not water)
+───────────────────────────────────────── */
+.phase-substance {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: var(--teal);
+  font-size: 13px;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE — GROUP TABS MOBILE
+───────────────────────────────────────── */
+@media (max-width: 540px) {
+  .group-tabs {
+    gap: 6px;
+  }
+  .group-tab {
+    padding: 7px 11px;
+    font-size: 13px;
+  }
+  .tab-icon {
+    font-size: 15px;
+  }
+}
