@@ -15,18 +15,26 @@
     <div class="header-inner">
       <a href="#" class="logo">
         <span class="logo-formula">H₂O</span>
-        <span class="logo-sub">Thermo Calc</span>
+        <span class="logo-sub" data-i18n="header.sub">Thermo Calc</span>
       </a>
-      <span class="header-badge">IAPWS-IF97 · 101.325 кПа</span>
+      <div class="header-right">
+        <span class="header-badge" data-i18n="header.badge">IAPWS-IF97 · 101.325 кПа</span>
+        <div class="lang-switch" id="langSwitch">
+          <button class="lang-btn" data-lang="uk">UA</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="pl">PL</button>
+          <button class="lang-btn" data-lang="de">DE</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- ─── Hero ────────────────────────────────────────── -->
   <div class="hero">
     <div class="container">
-      <div class="hero-eyebrow">Термодинамічний калькулятор</div>
-      <h1>Теплофізичні<br><em>властивості води</em></h1>
-      <p class="hero-desc">
+      <div class="hero-eyebrow" data-i18n="hero.eyebrow">Термодинамічний калькулятор</div>
+      <h1><span data-i18n="hero.title1">Теплофізичні</span><br><em data-i18n="hero.title2">властивості води</em></h1>
+      <p class="hero-desc" data-i18n="hero.desc">
         Введіть температуру — отримайте густину, теплоємність,
         теплопровідність, в'язкість та інші властивості рідкої води.
       </p>
@@ -39,12 +47,12 @@
 
       <!-- Input card -->
       <div class="card input-card">
-        <div class="input-card-title">Параметри розрахунку</div>
+        <div class="input-card-title" data-i18n="input.cardTitle">Параметри розрахунку</div>
 
         <div class="input-row">
           <!-- Temperature input -->
           <div>
-            <label class="field-label" for="tempInput">Температура</label>
+            <label class="field-label" for="tempInput" data-i18n="input.tempLabel">Температура</label>
             <div class="input-group">
               <input
                 type="number"
@@ -58,39 +66,86 @@
             </div>
           </div>
 
-          <!-- Unit toggle -->
+          <!-- Temp unit toggle -->
           <div>
-            <label class="field-label">Одиниці</label>
+            <label class="field-label" data-i18n="input.unitsLabel">Одиниці</label>
             <div class="unit-toggle">
               <button class="unit-btn active" data-unit="C">°C</button>
               <button class="unit-btn"        data-unit="K">K</button>
               <button class="unit-btn"        data-unit="F">°F</button>
             </div>
           </div>
+        </div>
+
+        <div class="input-row">
+          <!-- Pressure input -->
+          <div>
+            <label class="field-label" for="pressureInput" data-i18n="input.pressureLabel">Тиск</label>
+            <div class="input-group">
+              <input
+                type="number"
+                id="pressureInput"
+                class="temp-input"
+                placeholder="0.101325"
+                step="0.001"
+                autocomplete="off"
+              >
+              <span class="input-unit" id="pressureUnitLabel">MPa</span>
+            </div>
+          </div>
+
+          <!-- Pressure unit toggle -->
+          <div>
+            <label class="field-label">&nbsp;</label>
+            <div class="unit-toggle">
+              <button class="punit-btn active" data-punit="MPa">MPa</button>
+              <button class="punit-btn"        data-punit="kPa">kPa</button>
+              <button class="punit-btn"        data-punit="bar">bar</button>
+              <button class="punit-btn"        data-punit="atm">atm</button>
+            </div>
+          </div>
 
           <!-- Submit -->
           <div>
             <label class="field-label">&nbsp;</label>
-            <button class="btn-calc" id="calcBtn">Розрахувати</button>
+            <button class="btn-calc" id="calcBtn" data-i18n="input.calcBtn">Розрахувати</button>
           </div>
         </div>
 
-        <p class="range-note">
+        <p class="range-note" data-i18n="input.rangeNote">
           Допустимий діапазон: <b>0 — 370 °C</b> &ensp;·&ensp;
           атмосферний тиск &ensp;·&ensp; рідка фаза
         </p>
         <div class="error-banner" id="errorBanner"></div>
       </div>
 
+      <!-- History panel -->
+      <section class="history-card" id="historyCard" style="display:none;">
+        <div class="history-head">
+          <span class="history-title" data-i18n="history.title">Історія розрахунків</span>
+          <button class="history-clear" id="historyClearBtn" data-i18n="history.clear">Очистити</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
       <!-- Results section -->
       <section class="results-section" id="resultsSection">
         <div class="results-meta">
           <div class="results-temp" id="tempDisplay">—</div>
+          <div class="results-pressure" id="pressureDisplay"></div>
           <div class="phase-tag phase-water" id="phaseTag">Рідка вода</div>
         </div>
 
         <div class="props-grid" id="propsGrid">
           <!-- Filled by app.js -->
+        </div>
+
+        <div class="export-bar no-print">
+          <span class="export-title" data-i18n="export.title">Експорт результатів</span>
+          <div class="export-actions">
+            <button class="btn-export" id="exportCsvBtn" data-i18n="export.csv">Завантажити CSV</button>
+            <button class="btn-export" id="exportPdfBtn" data-i18n="export.pdf">Зберегти як PDF</button>
+          </div>
         </div>
       </section>
 
@@ -100,18 +155,24 @@
   <!-- ─── Footer ──────────────────────────────────────── -->
   <footer class="site-footer">
     <div class="footer-inner">
-      <p class="footer-note">
+      <p class="footer-note" data-i18n="footer.note">
         Розраховано за апроксимаційними формулами стандарту
         <a href="https://www.iapws.org" target="_blank" rel="noopener">IAPWS-IF97</a>.
         Похибка &lt; 1% у робочому діапазоні.
       </p>
-      <p class="footer-note">H₂O Thermo Calc &copy; 2026</p>
+      <p class="footer-note">
+        <span data-i18n="footer.copy">H₂O Thermo Calc &copy; 2026</span>
+        &ensp;·&ensp;
+        <span class="footer-version"><span data-i18n="footer.version">Версія</span> <span id="appVersion">—</span></span>
+      </p>
     </div>
   </footer>
 
 </div>
 
 <!-- Scripts — порядок важливий: спочатку логіка, потім UI -->
+<script src="version.js"></script>
+<script src="i18n.js"></script>
 <script src="water.js"></script>
 <script src="app.js"></script>
 </body>
