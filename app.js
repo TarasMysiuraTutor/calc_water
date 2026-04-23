@@ -23,6 +23,21 @@ const App = (() => {
   const $tempDisp   = document.getElementById('tempDisplay');
   const $pressDisp  = document.getElementById('pressureDisplay');
   const $phaseTag   = document.getElementById('phaseTag');
+  const $tsatDisp   = document.getElementById('tsatDisplay');
+
+  if ($tsatDisp) {
+    $tsatDisp.addEventListener('click', (e) => {
+      const el = e.target.closest('.tsat-value');
+      if (!el) return;
+      const tC = parseFloat(el.getAttribute('data-tsat-c'));
+      if (isNaN(tC)) return;
+      let val = tC;
+      if (currentUnit === 'K') val = tC + 273.15;
+      else if (currentUnit === 'F') val = tC * 9/5 + 32;
+      $input.value = val.toFixed(2);
+      calculate();
+    });
+  }
   const $propsGrid  = document.getElementById('propsGrid');
 
   function setUnit(unit) {
@@ -98,7 +113,14 @@ const App = (() => {
     $phaseTag.className = `phase-tag ${cls}`;
     $phaseTag.textContent = txt;
 
+    if ($tsatDisp) {
+      const tsat = Water.saturationTemp(pMPa);
+      $tsatDisp.innerHTML = `<span class="rp-label">${I18n.t('results.tsatLabel')}:</span> `
+        + `<b class="tsat-value" title="${I18n.t('results.tsatHint')}" data-tsat-c="${tsat}">${tsat.toFixed(2)} °C</b>`;
+    }
+
     renderProps(Water.getProperties(T, pMPa));
+    renderChart();
   }
 
   function calculate() {
@@ -151,6 +173,188 @@ const App = (() => {
     });
   }
 
+  // ─── Property chart ────────────────────────────────────
+  const CHART_PROPS = [
+    { key: 'rho',    sym: 'ρ',  tkey: 'prop.density', ukey: 'unit.density' },
+    { key: 'cp',     sym: 'cₚ', tkey: 'prop.cp',      ukey: 'unit.cp' },
+    { key: 'lambda', sym: 'λ',  tkey: 'prop.lambda',  ukey: 'unit.lambda' },
+    { key: 'mu',     sym: 'μ',  tkey: 'prop.mu',      ukey: 'unit.mu' },
+    { key: 'nu',     sym: 'ν',  tkey: 'prop.nu',      ukey: 'unit.nu' },
+    { key: 'a',      sym: 'a',  tkey: 'prop.a',       ukey: 'unit.a' },
+    { key: 'Pr',     sym: 'Pr', tkey: 'prop.Pr',      ukey: 'unit.Pr' },
+    { key: 'beta',   sym: 'β',  tkey: 'prop.beta',    ukey: 'unit.beta' },
+    { key: 'h',      sym: 'h',  tkey: 'prop.h',       ukey: 'unit.h' },
+  ];
+  let currentChartProp = 'rho';
+
+  function linearTicks(min, max, n) {
+    const span = max - min;
+    if (span <= 0) return [min];
+    const raw = span / n;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    let step = 10 * mag;
+    if (norm < 1.5) step = mag;
+    else if (norm < 3) step = 2 * mag;
+    else if (norm < 7) step = 5 * mag;
+    const start = Math.ceil(min / step) * step;
+    const ticks = [];
+    for (let v = start; v <= max + 1e-9; v += step) ticks.push(v);
+    return ticks;
+  }
+
+  function logTicks(min, max) {
+    const ticks = [];
+    const e0 = Math.floor(Math.log10(Math.max(min, 1e-12)));
+    const e1 = Math.ceil(Math.log10(max));
+    for (let e = e0; e <= e1; e++) {
+      const v = Math.pow(10, e);
+      if (v >= min * 0.999 && v <= max * 1.001) ticks.push(v);
+    }
+    return ticks;
+  }
+
+  function fmtTick(v) {
+    const a = Math.abs(v);
+    if (a === 0) return '0';
+    if (a >= 10000 || a < 0.01) return v.toExponential(0).replace('+', '');
+    if (a >= 100) return v.toFixed(0);
+    if (a >= 10)  return v.toFixed(1);
+    if (a >= 1)   return v.toFixed(2);
+    return v.toPrecision(2);
+  }
+
+  function setupChart() {
+    const sel = document.getElementById('chartPropSelect');
+    if (!sel) return;
+    function fillOptions() {
+      const cur = sel.value || currentChartProp;
+      sel.innerHTML = CHART_PROPS.map(p =>
+        `<option value="${p.key}">${p.sym} — ${I18n.t(p.tkey)}</option>`
+      ).join('');
+      sel.value = cur;
+      currentChartProp = sel.value;
+    }
+    fillOptions();
+    sel.addEventListener('change', () => {
+      currentChartProp = sel.value;
+      renderChart();
+    });
+    I18n.onChange(() => { fillOptions(); renderChart(); });
+  }
+
+  function renderChart() {
+    const wrap = document.getElementById('chartWrap');
+    const section = document.getElementById('chartSection');
+    if (!wrap || !section) return;
+    if (!lastT) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    const prop = currentChartProp;
+    const meta = CHART_PROPS.find(p => p.key === prop) || CHART_PROPS[0];
+    const pMPa = lastT.pMPa;
+    const Tsat = Water.saturationTemp(pMPa);
+
+    const W = 720, H = 320, PL = 64, PR = 18, PT = 22, PB = 44;
+    const PW = W - PL - PR, PH = H - PT - PB;
+    const Tmin = 1, Tmax = 800, N = 320;
+
+    const liq = [], stm = [];
+    for (let i = 0; i <= N; i++) {
+      const T = Tmin + (Tmax - Tmin) * i / N;
+      let d;
+      try {
+        const ph = Water.phase(T, pMPa);
+        d = (ph === 'steam') ? Water.computeSteam(T, pMPa) : Water.compute(T, pMPa);
+        const v = d[prop];
+        if (!isFinite(v) || v == null) continue;
+        (ph === 'steam' ? stm : liq).push([T, v]);
+      } catch (e) { /* skip */ }
+    }
+    const allV = liq.concat(stm).map(p => p[1]);
+    if (allV.length < 2) { wrap.innerHTML = ''; return; }
+
+    let vmin = Math.min(...allV), vmax = Math.max(...allV);
+    if (vmin === vmax) { vmin -= 1; vmax += 1; }
+    const useLog = vmin > 0 && vmax / Math.max(vmin, 1e-12) > 50;
+    if (!useLog) {
+      const span = vmax - vmin;
+      vmin -= span * 0.05; vmax += span * 0.05;
+    }
+
+    const tx = T => PL + (T - Tmin) / (Tmax - Tmin) * PW;
+    const ty = v => {
+      if (useLog) {
+        const lmin = Math.log10(Math.max(vmin, 1e-12));
+        const lmax = Math.log10(vmax);
+        return PT + PH - (Math.log10(Math.max(v, 1e-12)) - lmin) / (lmax - lmin) * PH;
+      }
+      return PT + PH - (v - vmin) / (vmax - vmin) * PH;
+    };
+    const path = pts => pts.map((p, i) =>
+      (i ? 'L' : 'M') + tx(p[0]).toFixed(1) + ',' + ty(p[1]).toFixed(1)
+    ).join(' ');
+
+    const xticks = [0, 100, 200, 300, 400, 500, 600, 700, 800].filter(t => t >= Tmin && t <= Tmax);
+    const yticks = useLog ? logTicks(vmin, vmax) : linearTicks(vmin, vmax, 5);
+
+    let s = `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<rect x="${PL}" y="${PT}" width="${PW}" height="${PH}" class="chart-plot"/>`;
+    xticks.forEach(t => {
+      const x = tx(t).toFixed(1);
+      s += `<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT + PH}" class="chart-grid"/>`;
+      s += `<text x="${x}" y="${PT + PH + 16}" class="chart-tick" text-anchor="middle">${t}</text>`;
+    });
+    yticks.forEach(v => {
+      const y = ty(v).toFixed(1);
+      s += `<line x1="${PL}" y1="${y}" x2="${PL + PW}" y2="${y}" class="chart-grid"/>`;
+      s += `<text x="${PL - 6}" y="${y + 3}" class="chart-tick" text-anchor="end">${fmtTick(v)}</text>`;
+    });
+    if (Tsat >= Tmin && Tsat <= Tmax) {
+      const xs = tx(Tsat).toFixed(1);
+      s += `<line x1="${xs}" y1="${PT}" x2="${xs}" y2="${PT + PH}" class="chart-tsat"/>`;
+      s += `<text x="${xs}" y="${PT - 6}" class="chart-tsat-label" text-anchor="middle">Tₛ ${Tsat.toFixed(1)}°C</text>`;
+    }
+    if (lastT.T >= Tmin && lastT.T <= Tmax) {
+      const xc = tx(lastT.T).toFixed(1);
+      s += `<line x1="${xc}" y1="${PT}" x2="${xc}" y2="${PT + PH}" class="chart-cur"/>`;
+    }
+    if (liq.length > 1) s += `<path d="${path(liq)}" class="chart-liquid"/>`;
+    if (stm.length > 1) s += `<path d="${path(stm)}" class="chart-steam"/>`;
+    s += `<text x="${PL + PW / 2}" y="${H - 8}" class="chart-axis" text-anchor="middle">T, °C</text>`;
+    const ylab = `${meta.sym}, ${I18n.t(meta.ukey)}${useLog ? ' (log)' : ''}`;
+    s += `<text x="${PL}" y="${PT - 8}" class="chart-axis">${ylab}</text>`;
+    s += `</svg>`;
+
+    wrap.innerHTML = s;
+  }
+
+  function setupThemeSwitch() {
+    const btns = document.querySelectorAll('#themeSwitch .theme-btn');
+    function syncActive() {
+      const cur = document.documentElement.getAttribute('data-theme') || 'auto';
+      btns.forEach(b => b.classList.toggle('active', b.dataset.themeSet === cur));
+    }
+    function syncTitles() {
+      const map = { light: 'theme.light', auto: 'theme.auto', dark: 'theme.dark' };
+      btns.forEach(b => {
+        const k = map[b.dataset.themeSet];
+        if (k) b.title = I18n.t(k);
+      });
+    }
+    btns.forEach(b => {
+      b.addEventListener('click', () => {
+        const t = b.dataset.themeSet;
+        try { localStorage.setItem('theme', t); } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t);
+        syncActive();
+      });
+    });
+    I18n.onChange(syncTitles);
+    syncActive();
+    syncTitles();
+  }
+
   function setupLangSwitch() {
     const btns = document.querySelectorAll('#langSwitch .lang-btn');
     function syncActive() {
@@ -183,7 +387,8 @@ const App = (() => {
       + (currentUnit !== 'C' ? ' (' + lastT.T.toFixed(2) + ' °C)' : '');
     const pressStr = lastT.pRaw + ' ' + lastT.pUnit
       + (lastT.pUnit !== 'MPa' ? ' (' + lastT.pMPa.toFixed(4) + ' MPa)' : '');
-    return { props, phaseTxt, tempStr, pressStr };
+    const tsatStr = Water.saturationTemp(lastT.pMPa).toFixed(2) + ' °C';
+    return { props, phaseTxt, tempStr, pressStr, tsatStr };
   }
 
   function exportCsv() {
@@ -193,6 +398,7 @@ const App = (() => {
     const lines = [];
     lines.push([I18n.t('export.tempLabel'), ctx.tempStr].map(csvEscape).join(sep));
     lines.push([I18n.t('results.pressureLabel'), ctx.pressStr].map(csvEscape).join(sep));
+    lines.push([I18n.t('results.tsatLabel'), ctx.tsatStr].map(csvEscape).join(sep));
     lines.push([I18n.t('export.phaseLabel'), ctx.phaseTxt].map(csvEscape).join(sep));
     lines.push([I18n.t('export.generated'), new Date().toISOString()].map(csvEscape).join(sep));
     lines.push('');
@@ -250,6 +456,7 @@ const App = (() => {
 <div class="meta">
   <div><b>${I18n.t('export.tempLabel')}:</b> ${ctx.tempStr}</div>
   <div><b>${I18n.t('results.pressureLabel')}:</b> ${ctx.pressStr}</div>
+  <div><b>${I18n.t('results.tsatLabel')}:</b> ${ctx.tsatStr}</div>
   <div><b>${I18n.t('export.phaseLabel')}:</b> ${ctx.phaseTxt}</div>
   <div><b>${I18n.t('export.generated')}:</b> ${new Date().toLocaleString(lang)}</div>
 </div>
@@ -338,6 +545,8 @@ const App = (() => {
   function init() {
     I18n.init();
     setupLangSwitch();
+    setupThemeSwitch();
+    setupChart();
     loadHistory();
     renderHistory();
 

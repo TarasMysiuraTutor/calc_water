@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Теплофізичні властивості води · H₂O Calc</title>
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme') || 'auto';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'auto');
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,6 +29,11 @@
       </a>
       <div class="header-right">
         <span class="header-badge" data-i18n="header.badge">IAPWS-IF97 · 101.325 кПа</span>
+        <div class="theme-switch" id="themeSwitch" role="group">
+          <button class="theme-btn" data-theme-set="light" aria-label="Light"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+          <button class="theme-btn" data-theme-set="auto" aria-label="Auto"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" fill="currentColor"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></button>
+          <button class="theme-btn" data-theme-set="dark" aria-label="Dark"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        </div>
         <div class="lang-switch" id="langSwitch">
           <button class="lang-btn" data-lang="uk">UA</button>
           <button class="lang-btn" data-lang="en">EN</button>
@@ -133,11 +148,29 @@
         <div class="results-meta">
           <div class="results-temp" id="tempDisplay">—</div>
           <div class="results-pressure" id="pressureDisplay"></div>
+          <div class="results-tsat" id="tsatDisplay"></div>
           <div class="phase-tag phase-water" id="phaseTag">Рідка вода</div>
         </div>
 
         <div class="props-grid" id="propsGrid">
           <!-- Filled by app.js -->
+        </div>
+
+        <div class="chart-section" id="chartSection">
+          <div class="chart-head">
+            <h3 class="chart-title" data-i18n="chart.title">Графік властивості від температури</h3>
+            <div class="chart-controls">
+              <label for="chartPropSelect" data-i18n="chart.propLabel">Властивість:</label>
+              <select id="chartPropSelect" class="chart-select"></select>
+            </div>
+          </div>
+          <div class="chart-wrap" id="chartWrap"></div>
+          <div class="chart-legend">
+            <span class="cl-item"><span class="cl-sw cl-liq"></span><span data-i18n="chart.legendLiquid">рідка вода</span></span>
+            <span class="cl-item"><span class="cl-sw cl-stm"></span><span data-i18n="chart.legendSteam">перегріта пара</span></span>
+            <span class="cl-item"><span class="cl-sw cl-tsat"></span><span data-i18n="chart.legendTsat">T насичення</span></span>
+            <span class="cl-item"><span class="cl-sw cl-cur"></span><span data-i18n="chart.legendCurrent">поточна T</span></span>
+          </div>
         </div>
 
         <div class="export-bar no-print">

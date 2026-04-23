@@ -65,6 +65,17 @@ const Water = (() => {
   }
 
   /**
+   * Прихована теплота пароутворення (кДж/кг) за кореляцією Watson.
+   * Аргумент — температура у °C.
+   */
+  function latentHeat(Tcels) {
+    const Tc = 647.1;          // K — критична температура води
+    const Tk = Tcels + 273.15;
+    if (Tk >= Tc) return 0;
+    return 262.1 * Math.pow(Tc - Tk, 0.38);
+  }
+
+  /**
    * Властивості перегрітої водяної пари.
    * Густина — ідеальний газ; інші — інженерні наближення.
    */
@@ -74,37 +85,32 @@ const Water = (() => {
     const R_s = 461.5; // Дж/(кг·К) питома газова стала для H₂O
 
     const rho = Pa / (R_s * Tk);
+    const v   = 1 / rho;       // питомий об'єм, м³/кг
 
     // Питома теплоємність cp (Дж/(кг·К)) — поліном за T (°C)
     const cp = 2073 - 0.86 * T + 3.4e-3 * T * T;
+    const cv = cp - R_s;
+    const gamma = cp / cv;
+    const sound = Math.sqrt(gamma * R_s * Tk); // м/с
 
-    // Теплопровідність (Вт/(м·К))
     const lambda = 0.0163 + 8.4e-5 * T;
-
-    // Динамічна в'язкість (Па·с)
-    const mu = 7.9e-6 + 4.13e-8 * T;
+    const mu     = 7.9e-6 + 4.13e-8 * T;
 
     const nu = mu / rho;
     const a  = lambda / (rho * cp);
     const Pr = mu * cp / lambda;
 
-    // Поверхневий натяг — не визначений у газовій фазі
-    const sigma = NaN;
-
     // Об'ємне розширення для ідеального газу: β = 1/T_K
     const beta = 1 / Tk;
 
-    // Тиск насичення при T (довідково)
-    const Pv = saturationPressureMPa(T) * 1000;
-
     // Ентальпія: h_рід(Tsat) + h_fg(Tsat) + cp_пара·(T − Tsat)
-    const Tsat   = saturationTemp(pMPa);
-    const h_f    = 4.1868 * Tsat * (1 + 0.00055 * Tsat);   // кДж/кг
-    const h_fg   = Math.max(0, 2501 - 2.36 * Tsat);        // кДж/кг
-    const dT     = Math.max(0, T - Tsat);
-    const h      = h_f + h_fg + (cp / 1000) * dT;
+    const Tsat = saturationTemp(pMPa);
+    const h_f  = 4.1868 * Tsat * (1 + 0.00055 * Tsat); // кДж/кг
+    const h_fg = latentHeat(Tsat);                     // кДж/кг (при поточному P)
+    const dT   = Math.max(0, T - Tsat);
+    const h    = h_f + h_fg + (cp / 1000) * dT;
 
-    return { rho, cp, lambda, mu, nu, a, Pr, sigma, beta, Pv, h };
+    return { rho, v, cp, gamma, sound, lambda, mu, nu, a, Pr, beta, h, h_fg };
   }
 
   function compute(T, pMPa) {
@@ -155,7 +161,11 @@ const Water = (() => {
 
     const h = 4.1868 * t * (1 + 0.00055 * t);
 
-    return { rho, cp, lambda, mu, nu, a, Pr, sigma, beta, Pv, h };
+    // Теплота пароутворення при температурі насичення для поточного P
+    const Tsat = saturationTemp(pMPa);
+    const h_fg = latentHeat(Tsat);
+
+    return { rho, cp, lambda, mu, nu, a, Pr, sigma, beta, Pv, h, h_fg };
   }
 
   function fmt(val, digits = 4) {
@@ -174,6 +184,26 @@ const Water = (() => {
     if (pMPa == null) pMPa = P_ATM_MPA;
     const ph = phase(T, pMPa);
     const p = (ph === 'steam') ? computeSteam(T, pMPa) : compute(T, pMPa);
+
+    if (ph === 'steam') {
+      return [
+        { id: '01', symbol: 'ρ',  name: _t('prop.density'), value: fmt(p.rho, 4),    unit: _t('unit.density'), raw: p.rho },
+        { id: '02', symbol: 'v',  name: _t('prop.v'),       value: fmt(p.v, 4),      unit: _t('unit.v'),       raw: p.v },
+        { id: '03', symbol: 'cₚ', name: _t('prop.cp'),      value: fmt(p.cp, 1),     unit: _t('unit.cp'),      raw: p.cp },
+        { id: '04', symbol: 'γ',  name: _t('prop.gamma'),   value: fmt(p.gamma, 3),  unit: _t('unit.gamma'),   raw: p.gamma },
+        { id: '05', symbol: 'λ',  name: _t('prop.lambda'),  value: fmt(p.lambda, 4), unit: _t('unit.lambda'),  raw: p.lambda },
+        { id: '06', symbol: 'a',  name: _t('prop.a'),       value: fmt(p.a, 4),      unit: _t('unit.a'),       raw: p.a },
+        { id: '07', symbol: 'μ',  name: _t('prop.mu'),      value: fmt(p.mu, 5),     unit: _t('unit.mu'),      raw: p.mu },
+        { id: '08', symbol: 'ν',  name: _t('prop.nu'),      value: fmt(p.nu, 5),     unit: _t('unit.nu'),      raw: p.nu },
+        { id: '09', symbol: 'Pr', name: _t('prop.Pr'),      value: fmt(p.Pr, 3),     unit: _t('unit.Pr'),      raw: p.Pr },
+        { id: '10', symbol: 'β',  name: _t('prop.beta'),    value: fmt(p.beta, 5),   unit: _t('unit.beta'),    raw: p.beta },
+        { id: '11', symbol: 'c',  name: _t('prop.sound'),   value: fmt(p.sound, 1),  unit: _t('unit.sound'),   raw: p.sound },
+        { id: '12', symbol: 'h',  name: _t('prop.h'),       value: fmt(p.h, 2),      unit: _t('unit.h'),       raw: p.h },
+        { id: '13', symbol: 'r',  name: _t('prop.hfg'),     value: fmt(p.h_fg, 2),   unit: _t('unit.hfg'),     raw: p.h_fg },
+      ];
+    }
+
+    // Liquid water
     return [
       { id: '01', symbol: 'ρ',  name: _t('prop.density'), value: fmt(p.rho, 3),    unit: _t('unit.density'), raw: p.rho },
       { id: '02', symbol: 'cₚ', name: _t('prop.cp'),      value: fmt(p.cp, 1),     unit: _t('unit.cp'),      raw: p.cp },
@@ -186,6 +216,7 @@ const Water = (() => {
       { id: '09', symbol: 'β',  name: _t('prop.beta'),    value: fmt(p.beta, 5),   unit: _t('unit.beta'),    raw: p.beta },
       { id: '10', symbol: 'Pₛ', name: _t('prop.Pv'),      value: fmt(p.Pv, 4),     unit: _t('unit.Pv'),      raw: p.Pv },
       { id: '11', symbol: 'h',  name: _t('prop.h'),       value: fmt(p.h, 2),      unit: _t('unit.h'),       raw: p.h },
+      { id: '12', symbol: 'r',  name: _t('prop.hfg'),     value: fmt(p.h_fg, 2),   unit: _t('unit.hfg'),     raw: p.h_fg },
     ];
   }
 
