@@ -180,9 +180,94 @@ const Water = (() => {
     return (typeof I18n !== 'undefined') ? I18n.t(key) : key;
   }
 
+  /**
+   * Властивості льоду Ih при тиску близькому до атмосферного.
+   * Кореляції — на основі даних IAPWS R10-06 та Andersson & Inaba (2005).
+   * Дійсно для T ≈ -100…0 °C.
+   */
+  /**
+   * Температура плавлення (замерзання) льоду Ih при заданому тиску.
+   * Кореляція IAPWS R14-08 (рівняння плавлення Ih), розв'язується ітерацією Ньютона.
+   * Дійсна для 0.000611657 ≤ p ≤ 208.566 МПа.
+   * Повертає T у °C.
+   */
+  function meltingTemp(pMPa) {
+    if (pMPa == null) pMPa = P_ATM_MPA;
+    if (pMPa <= 611.657e-6) return 0.01;
+    const pn = 611.657e-6;          // МПа (тиск потрійної точки)
+    const Tn = 273.16;              // К
+    const pi = pMPa / pn;
+    let theta = 1.0;                // початкове наближення
+    for (let i = 0; i < 80; i++) {
+      const t_neg3 = Math.pow(theta, -3);
+      const t_21 = Math.pow(theta, 21.2);
+      const F  = 1 - 0.626e6 * (1 - t_neg3) + 0.197135e6 * (1 - t_21) - pi;
+      const Fp = -0.626e6 * (3 * Math.pow(theta, -4))
+               + 0.197135e6 * (-21.2 * Math.pow(theta, 20.2));
+      const dx = F / Fp;
+      theta -= dx;
+      if (!isFinite(theta) || theta <= 0) { theta = 1; break; }
+      if (Math.abs(dx) < 1e-12) break;
+    }
+    return theta * Tn - 273.15;
+  }
+
+  function computeIce(T, pMPa) {
+    if (pMPa == null) pMPa = P_ATM_MPA;
+    const Tc = T;            // °C
+    const Tk = T + 273.15;   // K
+
+    // Густина (Pounder): 916.7 - 0.1403·T_C [kg/m³]
+    const rho = 916.7 - 0.1403 * Tc;
+
+    // Питома теплоємність (підгонка до IAPWS R10-06): 2096.6 + 6.49·T_C [J/(kg·K)]
+    const cp = 2096.6 + 6.49 * Tc;
+
+    // Теплопровідність (Andersson & Inaba): 632/T_K + 0.38 - 0.00197·T_K [W/(m·K)]
+    const lambda = 632 / Tk + 0.38 - 0.00197 * Tk;
+
+    // Температуропровідність a = λ/(ρ·cp) [m²/s]
+    const a = lambda / (rho * cp);
+
+    // Об'ємний коефіцієнт теплового розширення β = 3·α_L
+    // α_L(0°C) ≈ 53e-6, α_L(-50°C) ≈ 35e-6 → β = 3·α_L
+    const beta = 3 * (53e-6 + 0.36e-6 * Tc); // [1/K], зменшується при зниженні T
+
+    // Прихована теплота плавлення при 0°C [kJ/kg] — при стандартному тиску
+    const h_sf = 333.55;
+
+    // Питома ентальпія льоду відносно рідкої води при 0°C [kJ/kg]
+    // h(T) = -h_sf + ∫_0^T cp(τ) dτ / 1000
+    const h = -h_sf + (2.0966 * Tc + (6.49 / 2) * Tc * Tc / 1000);
+
+    // Швидкість звуку (поздовжня) у льоду Ih: c ≈ 3840 + 4·T_C [m/s] (груба апроксимація)
+    const sound = 3840 + 4 * Tc;
+
+    return {
+      T: Tc, pMPa,
+      rho, cp, lambda, a, beta,
+      h_sf, h, sound,
+    };
+  }
+
   function getProperties(T, pMPa) {
     if (pMPa == null) pMPa = P_ATM_MPA;
     const ph = phase(T, pMPa);
+
+    if (ph === 'ice') {
+      const p = computeIce(T, pMPa);
+      return [
+        { id: '01', symbol: 'ρ',  name: _t('prop.density'), value: fmt(p.rho, 2),    unit: _t('unit.density'), raw: p.rho },
+        { id: '02', symbol: 'cₚ', name: _t('prop.cp'),      value: fmt(p.cp, 1),     unit: _t('unit.cp'),      raw: p.cp },
+        { id: '03', symbol: 'λ',  name: _t('prop.lambda'),  value: fmt(p.lambda, 3), unit: _t('unit.lambda'),  raw: p.lambda },
+        { id: '04', symbol: 'a',  name: _t('prop.a'),       value: fmt(p.a, 4),      unit: _t('unit.a'),       raw: p.a },
+        { id: '05', symbol: 'β',  name: _t('prop.beta'),    value: fmt(p.beta, 6),   unit: _t('unit.beta'),    raw: p.beta },
+        { id: '06', symbol: 'c',  name: _t('prop.sound'),   value: fmt(p.sound, 1),  unit: _t('unit.sound'),   raw: p.sound },
+        { id: '07', symbol: 'h',  name: _t('prop.h'),       value: fmt(p.h, 2),      unit: _t('unit.h'),       raw: p.h },
+        { id: '08', symbol: 'L_sf', name: _t('prop.hsf'),   value: fmt(p.h_sf, 2),   unit: _t('unit.hsf'),     raw: p.h_sf },
+      ];
+    }
+
     const p = (ph === 'steam') ? computeSteam(T, pMPa) : compute(T, pMPa);
 
     if (ph === 'steam') {
@@ -221,8 +306,8 @@ const Water = (() => {
   }
 
   return {
-    toCelsius, toMPa, phase, compute, computeSteam, getProperties, fmt,
-    saturationTemp, saturationPressureMPa, P_ATM_MPA,
+    toCelsius, toMPa, phase, compute, computeSteam, computeIce, getProperties, fmt,
+    saturationTemp, saturationPressureMPa, meltingTemp, P_ATM_MPA,
   };
 
 })();

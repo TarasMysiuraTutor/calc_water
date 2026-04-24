@@ -149,6 +149,7 @@
           <div class="results-temp" id="tempDisplay">—</div>
           <div class="results-pressure" id="pressureDisplay"></div>
           <div class="results-tsat" id="tsatDisplay"></div>
+          <div class="results-tmelt" id="tmeltDisplay"></div>
           <div class="phase-tag phase-water" id="phaseTag">Рідка вода</div>
         </div>
 
@@ -162,11 +163,13 @@
             <div class="chart-controls">
               <label for="chartPropSelect" data-i18n="chart.propLabel">Властивість:</label>
               <select id="chartPropSelect" class="chart-select"></select>
+              <button type="button" id="chartExportBtn" class="chart-btn" data-i18n="chart.exportPng">Завантажити PNG</button>
             </div>
           </div>
           <div class="chart-wrap" id="chartWrap"></div>
           <div class="chart-legend">
             <span class="cl-item"><span class="cl-sw cl-liq"></span><span data-i18n="chart.legendLiquid">рідка вода</span></span>
+            <span class="cl-item"><span class="cl-sw cl-ice"></span><span data-i18n="chart.legendIce">лід</span></span>
             <span class="cl-item"><span class="cl-sw cl-stm"></span><span data-i18n="chart.legendSteam">перегріта пара</span></span>
             <span class="cl-item"><span class="cl-sw cl-tsat"></span><span data-i18n="chart.legendTsat">T насичення</span></span>
             <span class="cl-item"><span class="cl-sw cl-cur"></span><span data-i18n="chart.legendCurrent">поточна T</span></span>

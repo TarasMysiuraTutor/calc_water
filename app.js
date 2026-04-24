@@ -24,20 +24,24 @@ const App = (() => {
   const $pressDisp  = document.getElementById('pressureDisplay');
   const $phaseTag   = document.getElementById('phaseTag');
   const $tsatDisp   = document.getElementById('tsatDisplay');
+  const $tmeltDisp  = document.getElementById('tmeltDisplay');
 
-  if ($tsatDisp) {
-    $tsatDisp.addEventListener('click', (e) => {
-      const el = e.target.closest('.tsat-value');
+  function setupTempClickFill(container, valueSelector, attrName) {
+    if (!container) return;
+    container.addEventListener('click', (e) => {
+      const el = e.target.closest(valueSelector);
       if (!el) return;
-      const tC = parseFloat(el.getAttribute('data-tsat-c'));
+      const tC = parseFloat(el.getAttribute(attrName));
       if (isNaN(tC)) return;
       let val = tC;
       if (currentUnit === 'K') val = tC + 273.15;
-      else if (currentUnit === 'F') val = tC * 9/5 + 32;
+      else if (currentUnit === 'F') val = tC * 9 / 5 + 32;
       $input.value = val.toFixed(2);
       calculate();
     });
   }
+  setupTempClickFill($tsatDisp,  '.tsat-value',  'data-tsat-c');
+  setupTempClickFill($tmeltDisp, '.tmelt-value', 'data-t-c');
   const $propsGrid  = document.getElementById('propsGrid');
 
   function setUnit(unit) {
@@ -119,6 +123,12 @@ const App = (() => {
         + `<b class="tsat-value" title="${I18n.t('results.tsatHint')}" data-tsat-c="${tsat}">${tsat.toFixed(2)} °C</b>`;
     }
 
+    if ($tmeltDisp) {
+      const tmelt = Water.meltingTemp(pMPa);
+      $tmeltDisp.innerHTML = `<span class="rp-label">${I18n.t('results.tmeltLabel')}:</span> `
+        + `<b class="tmelt-value" title="${I18n.t('results.tmeltHint')}" data-t-c="${tmelt}">${tmelt.toFixed(2)} °C</b>`;
+    }
+
     renderProps(Water.getProperties(T, pMPa));
     renderChart();
   }
@@ -151,10 +161,10 @@ const App = (() => {
 
     const T = Water.toCelsius(raw, currentUnit);
 
-    if (T < 0 || T > 800) {
-      const range = currentUnit === 'C' ? '0 – 800 °C'
-                  : currentUnit === 'K' ? '273.15 – 1073.15 K'
-                  : '32 – 1472 °F';
+    if (T < -100 || T > 800) {
+      const range = currentUnit === 'C' ? '−100 – 800 °C'
+                  : currentUnit === 'K' ? '173.15 – 1073.15 K'
+                  : '−148 – 1472 °F';
       showError(I18n.t('err.outOfRange', { val: raw, range }));
       return;
     }
@@ -186,6 +196,7 @@ const App = (() => {
     { key: 'h',      sym: 'h',  tkey: 'prop.h',       ukey: 'unit.h' },
   ];
   let currentChartProp = 'rho';
+  let chartState = null;
 
   function linearTicks(min, max, n) {
     const span = max - min;
@@ -241,6 +252,90 @@ const App = (() => {
       renderChart();
     });
     I18n.onChange(() => { fillOptions(); renderChart(); });
+
+    const exportBtn = document.getElementById('chartExportBtn');
+    if (exportBtn) exportBtn.addEventListener('click', exportChartPng);
+  }
+
+  function exportChartPng() {
+    const wrap = document.getElementById('chartWrap');
+    const svg = wrap && wrap.querySelector('svg');
+    const st = chartState;
+    if (!svg || !st) return;
+
+    const clone = svg.cloneNode(true);
+    const srcEls = [svg, ...svg.querySelectorAll('*')];
+    const dstEls = [clone, ...clone.querySelectorAll('*')];
+    const props = [
+      'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity',
+      'fill-opacity', 'opacity',
+      'font-family', 'font-size', 'font-weight', 'text-anchor'
+    ];
+    for (let i = 0; i < srcEls.length; i++) {
+      const cs = getComputedStyle(srcEls[i]);
+      let style = '';
+      for (const p of props) {
+        const v = cs.getPropertyValue(p);
+        if (v) style += `${p}:${v};`;
+      }
+      dstEls[i].setAttribute('style', style);
+    }
+
+    clone.querySelectorAll('.chart-hover, .chart-overlay').forEach(el => el.remove());
+
+    const bodyCs = getComputedStyle(document.body);
+    const bg = (bodyCs.getPropertyValue('--surface') || bodyCs.backgroundColor || '#ffffff').trim() || '#ffffff';
+
+    const W = st.W, H = st.H, scale = 2;
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width',  W * scale);
+    clone.setAttribute('height', H * scale);
+    clone.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const bgRect = document.createElementNS(SVG_NS, 'rect');
+    bgRect.setAttribute('x', 0);
+    bgRect.setAttribute('y', 0);
+    bgRect.setAttribute('width',  W);
+    bgRect.setAttribute('height', H);
+    bgRect.setAttribute('fill', bg);
+    clone.insertBefore(bgRect, clone.firstChild);
+
+    const xml = new XMLSerializer().serializeToString(clone);
+    const svgBlob = new Blob(
+      ['<?xml version="1.0" encoding="UTF-8"?>\n', xml],
+      { type: 'image/svg+xml;charset=utf-8' }
+    );
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = W * scale;
+      canvas.height = H * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, W * scale, H * scale);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const fname = `H2O_${st.meta.key}_${st.pMPa.toFixed(3)}MPa_${stamp}.png`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }, 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      console.error('Failed to render SVG to image for PNG export');
+    };
+    img.src = url;
   }
 
   function renderChart() {
@@ -257,21 +352,24 @@ const App = (() => {
 
     const W = 720, H = 320, PL = 64, PR = 18, PT = 22, PB = 44;
     const PW = W - PL - PR, PH = H - PT - PB;
-    const Tmin = 1, Tmax = 800, N = 320;
+    const Tmin = -100, Tmax = 800, N = 360;
 
-    const liq = [], stm = [];
+    const ice = [], liq = [], stm = [];
     for (let i = 0; i <= N; i++) {
       const T = Tmin + (Tmax - Tmin) * i / N;
       let d;
       try {
         const ph = Water.phase(T, pMPa);
-        d = (ph === 'steam') ? Water.computeSteam(T, pMPa) : Water.compute(T, pMPa);
+        d = (ph === 'ice')   ? Water.computeIce(T, pMPa)
+          : (ph === 'steam') ? Water.computeSteam(T, pMPa)
+                             : Water.compute(T, pMPa);
         const v = d[prop];
         if (!isFinite(v) || v == null) continue;
-        (ph === 'steam' ? stm : liq).push([T, v]);
+        const arr = (ph === 'ice') ? ice : (ph === 'steam') ? stm : liq;
+        arr.push([T, v]);
       } catch (e) { /* skip */ }
     }
-    const allV = liq.concat(stm).map(p => p[1]);
+    const allV = ice.concat(liq).concat(stm).map(p => p[1]);
     if (allV.length < 2) { wrap.innerHTML = ''; return; }
 
     let vmin = Math.min(...allV), vmax = Math.max(...allV);
@@ -295,7 +393,7 @@ const App = (() => {
       (i ? 'L' : 'M') + tx(p[0]).toFixed(1) + ',' + ty(p[1]).toFixed(1)
     ).join(' ');
 
-    const xticks = [0, 100, 200, 300, 400, 500, 600, 700, 800].filter(t => t >= Tmin && t <= Tmax);
+    const xticks = [-100, -50, 0, 100, 200, 300, 400, 500, 600, 700, 800].filter(t => t >= Tmin && t <= Tmax);
     const yticks = useLog ? logTicks(vmin, vmax) : linearTicks(vmin, vmax, 5);
 
     let s = `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" xmlns="http://www.w3.org/2000/svg">`;
@@ -319,14 +417,142 @@ const App = (() => {
       const xc = tx(lastT.T).toFixed(1);
       s += `<line x1="${xc}" y1="${PT}" x2="${xc}" y2="${PT + PH}" class="chart-cur"/>`;
     }
+    if (ice.length > 1) s += `<path d="${path(ice)}" class="chart-ice"/>`;
     if (liq.length > 1) s += `<path d="${path(liq)}" class="chart-liquid"/>`;
     if (stm.length > 1) s += `<path d="${path(stm)}" class="chart-steam"/>`;
     s += `<text x="${PL + PW / 2}" y="${H - 8}" class="chart-axis" text-anchor="middle">T, °C</text>`;
     const ylab = `${meta.sym}, ${I18n.t(meta.ukey)}${useLog ? ' (log)' : ''}`;
     s += `<text x="${PL}" y="${PT - 8}" class="chart-axis">${ylab}</text>`;
+    s += `<g class="chart-hover" style="display:none">`
+      + `<line class="chart-hover-line" y1="${PT}" y2="${PT + PH}"/>`
+      + `<circle class="chart-hover-dot" r="4"/>`
+      + `</g>`;
+    s += `<rect class="chart-overlay" x="${PL}" y="${PT}" width="${PW}" height="${PH}" fill="transparent"/>`;
     s += `</svg>`;
+    s += `<div class="chart-tooltip" role="tooltip"></div>`;
 
     wrap.innerHTML = s;
+
+    chartState = {
+      ice, liq, stm, vmin, vmax, useLog,
+      Tmin, Tmax, W, H, PL, PT, PW, PH,
+      meta, Tsat, pMPa
+    };
+    attachChartHover();
+  }
+
+  function tyFromState(st, v) {
+    if (st.useLog) {
+      const lmin = Math.log10(Math.max(st.vmin, 1e-12));
+      const lmax = Math.log10(st.vmax);
+      return st.PT + st.PH - (Math.log10(Math.max(v, 1e-12)) - lmin) / (lmax - lmin) * st.PH;
+    }
+    return st.PT + st.PH - (v - st.vmin) / (st.vmax - st.vmin) * st.PH;
+  }
+
+  function fmtTooltipVal(v) {
+    const a = Math.abs(v);
+    if (a === 0) return '0';
+    if (a >= 10000 || a < 0.001) return v.toExponential(3);
+    if (a >= 1000) return v.toFixed(1);
+    if (a >= 10)   return v.toFixed(2);
+    if (a >= 1)    return v.toFixed(3);
+    return v.toPrecision(4);
+  }
+
+  function attachChartHover() {
+    const wrap = document.getElementById('chartWrap');
+    if (!wrap) return;
+    const svg = wrap.querySelector('svg');
+    const overlay = svg && svg.querySelector('.chart-overlay');
+    const hoverG = svg && svg.querySelector('.chart-hover');
+    const hoverLine = svg && svg.querySelector('.chart-hover-line');
+    const hoverDot = svg && svg.querySelector('.chart-hover-dot');
+    const tooltip = wrap.querySelector('.chart-tooltip');
+    if (!overlay || !hoverG || !tooltip) return;
+
+    function svgPointFromEvent(evt) {
+      const pt = svg.createSVGPoint();
+      pt.x = evt.clientX;
+      pt.y = evt.clientY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return null;
+      return pt.matrixTransform(ctm.inverse());
+    }
+
+    function onMove(evt) {
+      const st = chartState;
+      if (!st) return;
+      const p = svgPointFromEvent(evt);
+      if (!p) return;
+      const T = st.Tmin + (p.x - st.PL) / st.PW * (st.Tmax - st.Tmin);
+      let best = null, bestDist = Infinity, bestPhase = null;
+      for (const pt of (st.ice || [])) {
+        const d = Math.abs(pt[0] - T);
+        if (d < bestDist) { bestDist = d; best = pt; bestPhase = 'ice'; }
+      }
+      for (const pt of st.liq) {
+        const d = Math.abs(pt[0] - T);
+        if (d < bestDist) { bestDist = d; best = pt; bestPhase = 'liquid'; }
+      }
+      for (const pt of st.stm) {
+        const d = Math.abs(pt[0] - T);
+        if (d < bestDist) { bestDist = d; best = pt; bestPhase = 'steam'; }
+      }
+      if (!best) return;
+
+      const x = st.PL + (best[0] - st.Tmin) / (st.Tmax - st.Tmin) * st.PW;
+      const y = tyFromState(st, best[1]);
+
+      hoverG.style.display = '';
+      hoverLine.setAttribute('x1', x.toFixed(1));
+      hoverLine.setAttribute('x2', x.toFixed(1));
+      hoverDot.setAttribute('cx', x.toFixed(1));
+      hoverDot.setAttribute('cy', y.toFixed(1));
+      hoverDot.setAttribute('class', 'chart-hover-dot ' + bestPhase);
+
+      // Position tooltip in wrap-relative coordinates
+      const wrapRect = wrap.getBoundingClientRect();
+      const svgRect = svg.getBoundingClientRect();
+      const sx = svgRect.left + (x / st.W) * svgRect.width;
+      const sy = svgRect.top + (y / st.H) * svgRect.height;
+      let left = sx - wrapRect.left;
+      let top  = sy - wrapRect.top;
+      // Clamp horizontally so it doesn't escape the wrap
+      const ttRect = tooltip.getBoundingClientRect();
+      const halfW = (ttRect.width || 120) / 2;
+      const minL = halfW + 4, maxL = wrapRect.width - halfW - 4;
+      if (left < minL) left = minL;
+      if (left > maxL) left = maxL;
+      if (top < ttRect.height + 14) top = ttRect.height + 14; // flip below if too high
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top  = top  + 'px';
+      const unit = I18n.t(st.meta.ukey);
+      const phaseKey = bestPhase === 'steam' ? 'phase.steam'
+                     : bestPhase === 'ice'   ? 'phase.ice'
+                     : 'phase.water';
+      tooltip.innerHTML =
+        `<div class="ct-row"><span class="ct-key">T</span>`
+          + `<span class="ct-val">${best[0].toFixed(1)}</span>`
+          + `<span class="ct-unit">°C</span></div>`
+        + `<div class="ct-row"><span class="ct-key">${st.meta.sym}</span>`
+          + `<span class="ct-val">${fmtTooltipVal(best[1])}</span>`
+          + `<span class="ct-unit">${unit}</span></div>`
+        + `<div class="ct-phase ${bestPhase}">${I18n.t(phaseKey)}</div>`;
+      tooltip.classList.add('visible');
+    }
+
+    function onLeave() {
+      hoverG.style.display = 'none';
+      tooltip.classList.remove('visible');
+    }
+
+    overlay.addEventListener('mousemove', onMove);
+    overlay.addEventListener('mouseleave', onLeave);
+    overlay.addEventListener('touchstart', (e) => { if (e.touches[0]) onMove(e.touches[0]); }, { passive: true });
+    overlay.addEventListener('touchmove',  (e) => { if (e.touches[0]) onMove(e.touches[0]); }, { passive: true });
+    overlay.addEventListener('touchend',   onLeave);
   }
 
   function setupThemeSwitch() {
@@ -387,8 +613,9 @@ const App = (() => {
       + (currentUnit !== 'C' ? ' (' + lastT.T.toFixed(2) + ' °C)' : '');
     const pressStr = lastT.pRaw + ' ' + lastT.pUnit
       + (lastT.pUnit !== 'MPa' ? ' (' + lastT.pMPa.toFixed(4) + ' MPa)' : '');
-    const tsatStr = Water.saturationTemp(lastT.pMPa).toFixed(2) + ' °C';
-    return { props, phaseTxt, tempStr, pressStr, tsatStr };
+    const tsatStr  = Water.saturationTemp(lastT.pMPa).toFixed(2) + ' °C';
+    const tmeltStr = Water.meltingTemp(lastT.pMPa).toFixed(2)   + ' °C';
+    return { props, phaseTxt, tempStr, pressStr, tsatStr, tmeltStr };
   }
 
   function exportCsv() {
@@ -398,8 +625,9 @@ const App = (() => {
     const lines = [];
     lines.push([I18n.t('export.tempLabel'), ctx.tempStr].map(csvEscape).join(sep));
     lines.push([I18n.t('results.pressureLabel'), ctx.pressStr].map(csvEscape).join(sep));
-    lines.push([I18n.t('results.tsatLabel'), ctx.tsatStr].map(csvEscape).join(sep));
-    lines.push([I18n.t('export.phaseLabel'), ctx.phaseTxt].map(csvEscape).join(sep));
+    lines.push([I18n.t('results.tsatLabel'),  ctx.tsatStr ].map(csvEscape).join(sep));
+    lines.push([I18n.t('results.tmeltLabel'), ctx.tmeltStr].map(csvEscape).join(sep));
+    lines.push([I18n.t('export.phaseLabel'),  ctx.phaseTxt].map(csvEscape).join(sep));
     lines.push([I18n.t('export.generated'), new Date().toISOString()].map(csvEscape).join(sep));
     lines.push('');
     lines.push([
@@ -457,6 +685,7 @@ const App = (() => {
   <div><b>${I18n.t('export.tempLabel')}:</b> ${ctx.tempStr}</div>
   <div><b>${I18n.t('results.pressureLabel')}:</b> ${ctx.pressStr}</div>
   <div><b>${I18n.t('results.tsatLabel')}:</b> ${ctx.tsatStr}</div>
+  <div><b>${I18n.t('results.tmeltLabel')}:</b> ${ctx.tmeltStr}</div>
   <div><b>${I18n.t('export.phaseLabel')}:</b> ${ctx.phaseTxt}</div>
   <div><b>${I18n.t('export.generated')}:</b> ${new Date().toLocaleString(lang)}</div>
 </div>
