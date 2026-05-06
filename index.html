@@ -1,215 +1,356 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uk">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Теплофізичні властивості води · H₂O Calc</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <script>
-    (function () {
-      try {
-        var t = localStorage.getItem('theme') || 'auto';
-        document.documentElement.setAttribute('data-theme', t);
-      } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'auto');
-      }
-    })();
-  </script>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div class="page-wrap">
-
-  <!-- ─── Header ──────────────────────────────────────── -->
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="#" class="logo">
-        <span class="logo-formula">H₂O</span>
-        <span class="logo-sub" data-i18n="header.sub">Thermo Calc</span>
-      </a>
-      <div class="header-right">
-        <span class="header-badge" data-i18n="header.badge">IAPWS-IF97 · 101.325 кПа</span>
-        <div class="theme-switch" id="themeSwitch" role="group">
-          <button class="theme-btn" data-theme-set="light" aria-label="Light"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
-          <button class="theme-btn" data-theme-set="auto" aria-label="Auto"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" fill="currentColor"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></button>
-          <button class="theme-btn" data-theme-set="dark" aria-label="Dark"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Теплофізичні властивості води · H₂O Calc</title>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme") || "auto";
+          document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "auto");
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-wrap">
+      <!-- ─── Header ──────────────────────────────────────── -->
+      <header class="site-header">
+        <div class="header-inner">
+          <a href="#" class="logo">
+            <span class="logo-formula">H₂O</span>
+            <span class="logo-sub" data-i18n="header.sub">Thermo Calc</span>
+          </a>
+          <div class="header-right">
+            <span class="header-badge" data-i18n="header.badge"
+              >IAPWS-IF97 · 101.325 кПа</span
+            >
+            <div class="theme-switch" id="themeSwitch" role="group">
+              <button
+                class="theme-btn"
+                data-theme-set="light"
+                aria-label="Light"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="4" />
+                  <path
+                    d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                  />
+                </svg>
+              </button>
+              <button class="theme-btn" data-theme-set="auto" aria-label="Auto">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 3v18" fill="currentColor" />
+                  <path
+                    d="M12 3a9 9 0 0 1 0 18z"
+                    fill="currentColor"
+                    stroke="none"
+                  />
+                </svg>
+              </button>
+              <button class="theme-btn" data-theme-set="dark" aria-label="Dark">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              </button>
+            </div>
+            <div class="lang-switch" id="langSwitch">
+              <button class="lang-btn" data-lang="uk">UA</button>
+              <button class="lang-btn" data-lang="en">EN</button>
+              <button class="lang-btn" data-lang="pl">PL</button>
+              <button class="lang-btn" data-lang="de">DE</button>
+            </div>
+          </div>
         </div>
-        <div class="lang-switch" id="langSwitch">
-          <button class="lang-btn" data-lang="uk">UA</button>
-          <button class="lang-btn" data-lang="en">EN</button>
-          <button class="lang-btn" data-lang="pl">PL</button>
-          <button class="lang-btn" data-lang="de">DE</button>
+      </header>
+
+      <!-- ─── Hero ────────────────────────────────────────── -->
+      <div class="hero">
+        <div class="container">
+          <div class="hero-eyebrow" data-i18n="hero.eyebrow">
+            Термодинамічний калькулятор
+          </div>
+          <h1>
+            <span data-i18n="hero.title1">Теплофізичні</span><br /><em
+              data-i18n="hero.title2"
+              >властивості води</em
+            >
+          </h1>
+          <p class="hero-desc" data-i18n="hero.desc">
+            Введіть температуру — отримайте густину, теплоємність,
+            теплопровідність, в'язкість та інші властивості рідкої води.
+          </p>
         </div>
       </div>
-    </div>
-  </header>
 
-  <!-- ─── Hero ────────────────────────────────────────── -->
-  <div class="hero">
-    <div class="container">
-      <div class="hero-eyebrow" data-i18n="hero.eyebrow">Термодинамічний калькулятор</div>
-      <h1><span data-i18n="hero.title1">Теплофізичні</span><br><em data-i18n="hero.title2">властивості води</em></h1>
-      <p class="hero-desc" data-i18n="hero.desc">
-        Введіть температуру — отримайте густину, теплоємність,
-        теплопровідність, в'язкість та інші властивості рідкої води.
-      </p>
-    </div>
-  </div>
+      <!-- ─── Main ─────────────────────────────────────────── -->
+      <main class="main-content">
+        <div class="container">
+          <div id="modeSwitch" class="mode-switch">
+            <button
+              class="mode-btn active"
+              data-mode="normal"
+              data-i18n="mode.normal"
+            ></button>
+            <button
+              class="mode-btn"
+              data-mode="saturation"
+              data-i18n="mode.saturation"
+            ></button>
+          </div>
 
-  <!-- ─── Main ─────────────────────────────────────────── -->
-  <main class="main-content">
-    <div class="container">
+          <!-- Input card -->
+          <div class="card input-card">
+            <div class="input-card-title" data-i18n="input.cardTitle">
+              Параметри розрахунку
+            </div>
 
-      <!-- Input card -->
-      <div class="card input-card">
-        <div class="input-card-title" data-i18n="input.cardTitle">Параметри розрахунку</div>
+            <div class="input-row">
+              <!-- Temperature input -->
+              <div>
+                <label
+                  class="field-label"
+                  for="tempInput"
+                  data-i18n="input.tempLabel"
+                  >Температура</label
+                >
+                <div class="input-group">
+                  <input
+                    type="number"
+                    id="tempInput"
+                    class="temp-input"
+                    placeholder="20"
+                    step="0.1"
+                    autocomplete="off"
+                  />
+                  <span class="input-unit" id="inputUnitLabel">°C</span>
+                </div>
+              </div>
 
-        <div class="input-row">
-          <!-- Temperature input -->
-          <div>
-            <label class="field-label" for="tempInput" data-i18n="input.tempLabel">Температура</label>
-            <div class="input-group">
-              <input
-                type="number"
-                id="tempInput"
-                class="temp-input"
-                placeholder="20"
-                step="0.1"
-                autocomplete="off"
+              <!-- Temp unit toggle -->
+              <div>
+                <label class="field-label" data-i18n="input.unitsLabel"
+                  >Одиниці</label
+                >
+                <div class="unit-toggle">
+                  <button class="unit-btn active" data-unit="C">°C</button>
+                  <button class="unit-btn" data-unit="K">K</button>
+                  <button class="unit-btn" data-unit="F">°F</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-row">
+              <!-- Pressure input -->
+              <div>
+                <label
+                  class="field-label"
+                  for="pressureInput"
+                  data-i18n="input.pressureLabel"
+                  >Тиск</label
+                >
+                <div class="input-group">
+                  <input
+                    type="number"
+                    id="pressureInput"
+                    class="temp-input"
+                    placeholder="0.101325"
+                    step="0.001"
+                    autocomplete="off"
+                  />
+                  <span class="input-unit" id="pressureUnitLabel">MPa</span>
+                </div>
+              </div>
+
+              <!-- Pressure unit toggle -->
+              <div>
+                <label class="field-label">&nbsp;</label>
+                <div class="unit-toggle">
+                  <button class="punit-btn active" data-punit="MPa">MPa</button>
+                  <button class="punit-btn" data-punit="kPa">kPa</button>
+                  <button class="punit-btn" data-punit="bar">bar</button>
+                  <button class="punit-btn" data-punit="atm">atm</button>
+                </div>
+              </div>
+
+              <!-- Submit -->
+              <div>
+                <label class="field-label">&nbsp;</label>
+                <button class="btn-calc" id="calcBtn" data-i18n="input.calcBtn">
+                  Розрахувати
+                </button>
+              </div>
+            </div>
+
+            <p class="range-note" data-i18n="input.rangeNote">
+              Допустимий діапазон: <b>0 — 370 °C</b> &ensp;·&ensp; атмосферний
+              тиск &ensp;·&ensp; рідка фаза
+            </p>
+            <div class="error-banner" id="errorBanner"></div>
+          </div>
+
+          <!-- History panel -->
+          <section class="history-card" id="historyCard" style="display: none">
+            <div class="history-head">
+              <span class="history-title" data-i18n="history.title"
+                >Історія розрахунків</span
               >
-              <span class="input-unit" id="inputUnitLabel">°C</span>
-            </div>
-          </div>
-
-          <!-- Temp unit toggle -->
-          <div>
-            <label class="field-label" data-i18n="input.unitsLabel">Одиниці</label>
-            <div class="unit-toggle">
-              <button class="unit-btn active" data-unit="C">°C</button>
-              <button class="unit-btn"        data-unit="K">K</button>
-              <button class="unit-btn"        data-unit="F">°F</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="input-row">
-          <!-- Pressure input -->
-          <div>
-            <label class="field-label" for="pressureInput" data-i18n="input.pressureLabel">Тиск</label>
-            <div class="input-group">
-              <input
-                type="number"
-                id="pressureInput"
-                class="temp-input"
-                placeholder="0.101325"
-                step="0.001"
-                autocomplete="off"
+              <button
+                class="history-clear"
+                id="historyClearBtn"
+                data-i18n="history.clear"
               >
-              <span class="input-unit" id="pressureUnitLabel">MPa</span>
+                Очистити
+              </button>
             </div>
-          </div>
+            <div class="history-list" id="historyList"></div>
+          </section>
 
-          <!-- Pressure unit toggle -->
-          <div>
-            <label class="field-label">&nbsp;</label>
-            <div class="unit-toggle">
-              <button class="punit-btn active" data-punit="MPa">MPa</button>
-              <button class="punit-btn"        data-punit="kPa">kPa</button>
-              <button class="punit-btn"        data-punit="bar">bar</button>
-              <button class="punit-btn"        data-punit="atm">atm</button>
+          <!-- Results section -->
+          <section class="results-section" id="resultsSection">
+            <div class="results-meta">
+              <div class="results-temp" id="tempDisplay">—</div>
+              <div class="results-pressure" id="pressureDisplay"></div>
+              <div class="results-tsat" id="tsatDisplay"></div>
+              <div class="results-tmelt" id="tmeltDisplay"></div>
+              <div class="phase-tag phase-water" id="phaseTag">Рідка вода</div>
             </div>
-          </div>
 
-          <!-- Submit -->
-          <div>
-            <label class="field-label">&nbsp;</label>
-            <button class="btn-calc" id="calcBtn" data-i18n="input.calcBtn">Розрахувати</button>
-          </div>
-        </div>
-
-        <p class="range-note" data-i18n="input.rangeNote">
-          Допустимий діапазон: <b>0 — 370 °C</b> &ensp;·&ensp;
-          атмосферний тиск &ensp;·&ensp; рідка фаза
-        </p>
-        <div class="error-banner" id="errorBanner"></div>
-      </div>
-
-      <!-- History panel -->
-      <section class="history-card" id="historyCard" style="display:none;">
-        <div class="history-head">
-          <span class="history-title" data-i18n="history.title">Історія розрахунків</span>
-          <button class="history-clear" id="historyClearBtn" data-i18n="history.clear">Очистити</button>
-        </div>
-        <div class="history-list" id="historyList"></div>
-      </section>
-
-      <!-- Results section -->
-      <section class="results-section" id="resultsSection">
-        <div class="results-meta">
-          <div class="results-temp" id="tempDisplay">—</div>
-          <div class="results-pressure" id="pressureDisplay"></div>
-          <div class="results-tsat" id="tsatDisplay"></div>
-          <div class="results-tmelt" id="tmeltDisplay"></div>
-          <div class="phase-tag phase-water" id="phaseTag">Рідка вода</div>
-        </div>
-
-        <div class="props-grid" id="propsGrid">
-          <!-- Filled by app.js -->
-        </div>
-
-        <div class="chart-section" id="chartSection">
-          <div class="chart-head">
-            <h3 class="chart-title" data-i18n="chart.title">Графік властивості від температури</h3>
-            <div class="chart-controls">
-              <label for="chartPropSelect" data-i18n="chart.propLabel">Властивість:</label>
-              <select id="chartPropSelect" class="chart-select"></select>
-              <button type="button" id="chartExportBtn" class="chart-btn" data-i18n="chart.exportPng">Завантажити PNG</button>
+            <div class="props-grid" id="propsGrid">
+              <!-- Filled by app.js -->
             </div>
-          </div>
-          <div class="chart-wrap" id="chartWrap"></div>
-          <div class="chart-legend">
-            <span class="cl-item"><span class="cl-sw cl-liq"></span><span data-i18n="chart.legendLiquid">рідка вода</span></span>
-            <span class="cl-item"><span class="cl-sw cl-ice"></span><span data-i18n="chart.legendIce">лід</span></span>
-            <span class="cl-item"><span class="cl-sw cl-stm"></span><span data-i18n="chart.legendSteam">перегріта пара</span></span>
-            <span class="cl-item"><span class="cl-sw cl-tsat"></span><span data-i18n="chart.legendTsat">T насичення</span></span>
-            <span class="cl-item"><span class="cl-sw cl-cur"></span><span data-i18n="chart.legendCurrent">поточна T</span></span>
-          </div>
-        </div>
 
-        <div class="export-bar no-print">
-          <span class="export-title" data-i18n="export.title">Експорт результатів</span>
-          <div class="export-actions">
-            <button class="btn-export" id="exportCsvBtn" data-i18n="export.csv">Завантажити CSV</button>
-            <button class="btn-export" id="exportPdfBtn" data-i18n="export.pdf">Зберегти як PDF</button>
-          </div>
-        </div>
-      </section>
+            <div class="chart-section" id="chartSection">
+              <div class="chart-head">
+                <h3 class="chart-title" data-i18n="chart.title">
+                  Графік властивості від температури
+                </h3>
+                <div class="chart-controls">
+                  <label for="chartPropSelect" data-i18n="chart.propLabel"
+                    >Властивість:</label
+                  >
+                  <select id="chartPropSelect" class="chart-select"></select>
+                  <button
+                    type="button"
+                    id="chartExportBtn"
+                    class="chart-btn"
+                    data-i18n="chart.exportPng"
+                  >
+                    Завантажити PNG
+                  </button>
+                </div>
+              </div>
+              <div class="chart-wrap" id="chartWrap"></div>
+              <div class="chart-legend">
+                <span class="cl-item"
+                  ><span class="cl-sw cl-liq"></span
+                  ><span data-i18n="chart.legendLiquid">рідка вода</span></span
+                >
+                <span class="cl-item"
+                  ><span class="cl-sw cl-ice"></span
+                  ><span data-i18n="chart.legendIce">лід</span></span
+                >
+                <span class="cl-item"
+                  ><span class="cl-sw cl-stm"></span
+                  ><span data-i18n="chart.legendSteam"
+                    >перегріта пара</span
+                  ></span
+                >
+                <span class="cl-item"
+                  ><span class="cl-sw cl-tsat"></span
+                  ><span data-i18n="chart.legendTsat">T насичення</span></span
+                >
+                <span class="cl-item"
+                  ><span class="cl-sw cl-cur"></span
+                  ><span data-i18n="chart.legendCurrent">поточна T</span></span
+                >
+              </div>
+            </div>
 
+            <div class="export-bar no-print">
+              <span class="export-title" data-i18n="export.title"
+                >Експорт результатів</span
+              >
+              <div class="export-actions">
+                <button
+                  class="btn-export"
+                  id="exportCsvBtn"
+                  data-i18n="export.csv"
+                >
+                  Завантажити CSV
+                </button>
+                <button
+                  class="btn-export"
+                  id="exportPdfBtn"
+                  data-i18n="export.pdf"
+                >
+                  Зберегти як PDF
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <!-- ─── Footer ──────────────────────────────────────── -->
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <p class="footer-note" data-i18n="footer.note">
+            Розраховано за апроксимаційними формулами стандарту
+            <a href="https://www.iapws.org" target="_blank" rel="noopener"
+              >IAPWS-IF97</a
+            >. Похибка &lt; 1% у робочому діапазоні.
+          </p>
+          <p class="footer-note">
+            <span data-i18n="footer.copy">H₂O Thermo Calc &copy; 2026</span>
+            &ensp;·&ensp;
+            <span class="footer-version"
+              ><span data-i18n="footer.version">Версія</span>
+              <span id="appVersion">—</span></span
+            >
+          </p>
+        </div>
+      </footer>
     </div>
-  </main>
 
-  <!-- ─── Footer ──────────────────────────────────────── -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <p class="footer-note" data-i18n="footer.note">
-        Розраховано за апроксимаційними формулами стандарту
-        <a href="https://www.iapws.org" target="_blank" rel="noopener">IAPWS-IF97</a>.
-        Похибка &lt; 1% у робочому діапазоні.
-      </p>
-      <p class="footer-note">
-        <span data-i18n="footer.copy">H₂O Thermo Calc &copy; 2026</span>
-        &ensp;·&ensp;
-        <span class="footer-version"><span data-i18n="footer.version">Версія</span> <span id="appVersion">—</span></span>
-      </p>
-    </div>
-  </footer>
-
-</div>
-
-<!-- Scripts — порядок важливий: спочатку логіка, потім UI -->
-<script src="version.js"></script>
-<script src="i18n.js"></script>
-<script src="water.js"></script>
-<script src="app.js"></script>
-</body>
+    <!-- Scripts — порядок важливий: спочатку логіка, потім UI -->
+    <script src="version.js"></script>
+    <script src="i18n.js"></script>
+    <script src="src/water.js"></script>
+    <script src="src/engine.js"></script>
+    <script src="src/app.js"></script>
+  </body>
 </html>
