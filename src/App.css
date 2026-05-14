@@ -1073,6 +1073,9 @@ main.main-content {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
 }
 .chart-head {
   display: flex;
@@ -1120,13 +1123,27 @@ main.main-content {
 }
 .chart-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
 .chart-btn:active { transform: translateY(1px); }
-.chart-wrap { width: 100%; overflow-x: auto; position: relative; }
-.chart-svg { width: 100%; height: auto; display: block; }
+.chart-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  position: relative;
+  overflow: visible;
+  aspect-ratio: 860 / 360;
+}
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  min-height: 0;
+}
 .chart-plot { fill: var(--surface-2); stroke: var(--border); stroke-width: 1; }
 .chart-grid { stroke: var(--border); stroke-width: 1; opacity: 0.4; }
 .chart-tick { fill: var(--text-3); font: 11px var(--ff-mono); }
 .chart-axis { fill: var(--text-2); font: 12px var(--ff-body); font-weight: 500; }
 .chart-tsat { stroke: #fbbf24; stroke-width: 1.2; stroke-dasharray: 5 3; }
+.chart-tmelt { stroke: #06b6d4; stroke-width: 1.2; stroke-dasharray: 5 3; }
 .chart-tsat-label { fill: #fbbf24; font: 11px var(--ff-mono); }
 .chart-cur { stroke: var(--blue); stroke-width: 1; opacity: 0.55; stroke-dasharray: 2 3; }
 .chart-ice    { fill: none; stroke: #67e8f9; stroke-width: 2; }
@@ -1169,7 +1186,7 @@ main.main-content {
   white-space: nowrap;
   z-index: 5;
   opacity: 0;
-  transform: translate(-50%, calc(-100% - 10px));
+  transform: translate(0, -14px);
   transition: opacity 0.12s ease;
   line-height: 1.45;
 }
@@ -1186,3 +1203,145 @@ main.main-content {
 .chart-tooltip .ct-phase.ice    { color: #06b6d4; }
 .chart-tooltip .ct-phase.liquid { color: var(--blue); }
 .chart-tooltip .ct-phase.steam  { color: #f87171; }
+
+/* ── Tabs + saturated steam panel ── */
+.calc-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 16px;
+}
+.calc-tab-btn {
+  background: var(--surface);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.calc-tab-btn.active {
+  color: var(--blue);
+  border-color: var(--blue-border);
+  background: var(--blue-bg);
+}
+
+.sat-card {
+  margin-top: 8px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.sat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sat-title {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-1);
+}
+.sat-mode {
+  display: inline-flex;
+  gap: 6px;
+}
+.sat-mode-btn {
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border-lt);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sat-mode-btn.active {
+  color: var(--blue);
+  border-color: var(--blue-border);
+  background: var(--blue-bg);
+}
+.sat-body {
+  margin-top: 14px;
+}
+/* Ті самі рядки, що в основній картці: інпут + одиниці + кнопка */
+.sat-card .sat-input-row {
+  margin-bottom: 0;
+}
+.sat-card .field-label {
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  white-space: normal;
+  max-width: 22ch;
+}
+.sat-card .unit-toggle {
+  flex-wrap: wrap;
+  min-height: 56px;
+  height: auto;
+}
+.sat-card .unit-toggle .punit-btn {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.sat-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .sat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.sat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px 10px;
+  align-items: baseline;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-lt);
+  border-radius: var(--radius-sm);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.sat-label {
+  color: var(--text-2);
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.sat-value {
+  color: var(--text-1);
+  font-family: var(--ff-mono);
+  min-width: 0;
+  text-align: right;
+  word-break: break-word;
+}
+.sat-unit {
+  color: var(--text-3);
+  font-size: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.sat-props-grid {
+  margin-top: 18px;
+}
+
+.sat-history-card {
+  margin-top: 18px;
+}
