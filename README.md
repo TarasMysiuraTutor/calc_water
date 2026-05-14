@@ -90,7 +90,7 @@ npm run lint
 Для цього проекту QR-код веде на стабільну адресу:
 
 ```text
-https://calc-water.vercel.app/
+https://calc-water-props.vercel.app/
 ```
 
 Після redeploy у тому самому Vercel project ця адреса відкриватиме нову React-версію, тому QR-код міняти не потрібно.
@@ -110,10 +110,10 @@ https://calc-water.vercel.app/
 - `site.webmanifest`;
 - favicon у форматі `.ico`.
 
-Після деплою бажано додати `https://calc-water.vercel.app/` у Google Search Console і відправити sitemap:
+Після деплою бажано додати `https://calc-water-props.vercel.app/` у Google Search Console і відправити sitemap:
 
 ```text
-https://calc-water.vercel.app/sitemap.xml
+https://calc-water-props.vercel.app/sitemap.xml
 ```
 
 ## Перевірено
@@ -134,7 +134,7 @@ https://calc-water.vercel.app/sitemap.xml
 - Виправлено обробку `T = 0 °C` у сітці властивостей.
 - Версію застосунку винесено в `src/version.js` і синхронізовано з `package.json`.
 - Очищено lint-помилки: зайві імпорти, невикористані змінні, порожні `catch` блоки, React Fast Refresh попередження для context-файлів.
-- Оновлено favicon і додано SEO-мета-теги для публічного Vercel-деплою `https://calc-water.vercel.app/`.
+- Оновлено favicon і додано SEO-мета-теги для публічного Vercel-деплою `https://calc-water-props.vercel.app/`.
 - Додано canonical URL, `robots.txt`, `sitemap.xml` і `site.webmanifest`.
 
 ### v1.9.1
